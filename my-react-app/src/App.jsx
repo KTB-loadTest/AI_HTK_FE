@@ -9,7 +9,7 @@ import { VideoPreview } from './components/VideoPreview';
 import { LandingPage } from './components/LandingPage';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
+  const [isAuthenticated] = useState(
     () => sessionStorage.getItem('loggedIn') === 'true'
   );
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -62,6 +62,20 @@ export default function App() {
   // 로그인 성공 파라미터 감지 (백엔드에서 /?login=success 형태로 리다이렉트한다고 가정)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    if (params.get('login') === 'success') {
+      sessionStorage.setItem('loggedIn', 'true');
+
+      // 쿼리스트링 제거
+      params.delete('login');
+      const newSearch = params.toString();
+      const cleanUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, []);
+  /*
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
     const loginSuccess = params.get('login') === 'success';
 
     if (loginSuccess) {
@@ -72,6 +86,7 @@ export default function App() {
       window.history.replaceState({}, document.title, cleanUrl);
     }
   }, []);
+  */
 
   if (!isAuthenticated) {
     return <LandingPage />;

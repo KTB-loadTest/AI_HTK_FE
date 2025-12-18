@@ -6,7 +6,6 @@ export function LandingPage() {
   const [activeSection, setActiveSection] = useState(0);
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const loginUrl = import.meta.env.VITE_API_URL || '/login';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,7 +21,7 @@ export function LandingPage() {
 
   const handleLoginClick = () => {
     // 백엔드가 /login에서 Google OAuth 리다이렉트를 처리하도록 위임
-    window.location.href = loginUrl;
+    window.location.href = `${import.meta.env.VITE_API_URL}/login`;
   };
 
   const features = [
