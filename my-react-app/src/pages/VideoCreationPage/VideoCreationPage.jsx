@@ -50,7 +50,7 @@ const VideoCameraIcon = () => (
 const navigationItems = [
   { path: '/', label: '홈', icon: HomeIcon },
   { path: '/video-creation', label: '영상 제작', icon: VideoIcon },
-  { path: '/projects', label: '프로젝트', icon: FolderIcon },
+  { path: '/projects', label: '분석', icon: FolderIcon },
   { path: '/team', label: '팀', icon: UsersIcon },
   { path: '/settings', label: '설정', icon: SettingsIcon },
 ];
