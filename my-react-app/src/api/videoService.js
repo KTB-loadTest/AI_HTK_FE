@@ -8,6 +8,12 @@ export const videoService = {
     createVideo: (data) => client.post('/videos', data),
 
     /**
+     * 최근 생성된 책 목록 가져오기
+     * @param {number} userId - 사용자 ID
+     */
+    getRecentBooks: (userId) => client.get(`/books/recent?userId=${userId}`),
+
+    /**
      * 소설 원고 제출 및 영상 생성 요청
      * @param {Object} data - { title: string, content: string }
      */

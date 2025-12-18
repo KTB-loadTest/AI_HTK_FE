@@ -1,6 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Video, Clock, CheckCircle2, TrendingUp, Plus, Play } from 'lucide-react';
+import { videoService } from '../api/videoService';
 
 export function Dashboard({ onNavigate, onProjectClick }) {
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const stats = [
     { icon: Video, label: '총 영상', value: '24', color: 'bg-blue-100 text-blue-600' },
     { icon: Clock, label: '제작 중', value: '3', color: 'bg-yellow-100 text-yellow-600' },
@@ -8,27 +13,20 @@ export function Dashboard({ onNavigate, onProjectClick }) {
     { icon: TrendingUp, label: '이번 달', value: '+12', color: 'bg-purple-100 text-purple-600' },
   ];
 
-  const recentProjects = [
-    { id: 1, title: '해리포터와 마법사의 돌', author: 'J.K. 롤링', status: 'complete', date: '2024.12.15', videoCount: 4 },
-    { id: 2, title: '1984', author: '조지 오웰', status: 'complete', date: '2024.12.14', videoCount: 3 },
-    { id: 3, title: '어린왕자', author: '생텍쥐페리', status: 'processing', date: '2024.12.13', videoCount: 4 },
-    { id: 4, title: '노인과 바다', author: '어니스트 헤밍웨이', status: 'complete', date: '2024.12.12', videoCount: 3 },
-  ];
+  useEffect(() => {
+    const fetchRecentBooks = async () => {
+      try {
+        const response = await videoService.getRecentBooks(3);
+        setRecentProjects(response.data);
+      } catch (error) {
+        console.error('최근 책 목록 조회 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getStatusBadge = (status) => {
-    if (status === 'complete') {
-      return (
-        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-          완료
-        </span>
-      );
-    }
-    return (
-      <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">
-        제 중
-      </span>
-    );
-  };
+    fetchRecentBooks();
+  }, []);
 
   return (
     <div>
@@ -74,31 +72,34 @@ export function Dashboard({ onNavigate, onProjectClick }) {
           </button>
         </div>
 
-        <div className="space-y-4">
-          {recentProjects.map((project) => (
-            <div
-              key={project.id}
-              onClick={() => onProjectClick(project.id)}
-              className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors cursor-pointer hover:bg-gray-50"
-            >
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Play className="w-8 h-8 text-white" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <h3 className="text-gray-900 mb-1">{project.title}</h3>
-                <p className="text-gray-500">{project.author} · 영상 {project.videoCount}개</p>
-              </div>
-
-              <div className="text-right flex-shrink-0">
-                <div className="mb-2">
-                  {getStatusBadge(project.status)}
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">
+            로딩 중...
+          </div>
+        ) : recentProjects.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            최근 프로젝트가 없습니다.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentProjects.map((project) => (
+              <div
+                key={project.id}
+                onClick={() => onProjectClick(project.id)}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors cursor-pointer hover:bg-gray-50"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Play className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-gray-500 text-sm">{project.date}</p>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-gray-900 mb-1">{project.title}</h3>
+                  <p className="text-gray-500">{project.author}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 빠른 시작 가이드 */}
