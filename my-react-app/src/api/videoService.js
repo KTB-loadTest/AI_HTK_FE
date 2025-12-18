@@ -41,10 +41,11 @@ export const videoService = {
     generateTrailer: (data) => client.post('/videos/generate', data),
 
     /**
-     * 생성 중인 영상 상태 확인 (Polling용)
-     * @param {string} videoId
+     * Job 상태 조회 (Polling용)
+     * @param {number} jobId
+     * @returns {{ jobId, status, videoId, youtubeUrl, title, authorName, message }}
      */
-    getVideoStatus: (videoId) => client.get(`/videos/status/${videoId}`),
+    getJobStatus: (jobId) => client.get(`/videos/jobs/${jobId}`),
 
     /**
      * 완성된 예고편 목록 가져오기

@@ -23,6 +23,18 @@ export default function App() {
       ? 'projects'
       : currentPage;
 
+  // 폴링 시작 시 (processing 상태로 전환)
+  const handleProcessingStart = (data) => {
+    // data 구조: { title, author, jobId }
+    setBookData({
+      title: data.title,
+      author: data.author,
+      videos: []
+    });
+    setVideoState('processing');
+  };
+
+  // 폴링 성공 시 (complete 상태로 전환)
   const handleCreateVideo = (data) => {
     // data 구조: { title, author, response: [{id, youtubeUrl, title}, ...] }
     const bookInfo = {
@@ -32,7 +44,14 @@ export default function App() {
     };
 
     setBookData(bookInfo);
-    setVideoState('complete'); // 백엔드에서 이미 생성 완료된 상태로 옴
+    setVideoState('complete');
+  };
+
+  // 에러 발생 시
+  const handleError = (errorMessage) => {
+    setVideoState('idle');
+    setBookData(null);
+    alert(errorMessage);
   };
 
   const handleReset = () => {
@@ -123,7 +142,12 @@ export default function App() {
               <h1 className="mb-8">영상 제작 대시보드</h1>
 
               <div className="grid grid-cols-2 gap-6">
-                <BookForm onSubmit={handleCreateVideo} disabled={videoState === 'processing'} />
+                <BookForm
+                  onSubmit={handleCreateVideo}
+                  onProcessingStart={handleProcessingStart}
+                  onError={handleError}
+                  disabled={videoState === 'processing'}
+                />
                 <VideoPreview
                   state={videoState}
                   bookData={bookData}
