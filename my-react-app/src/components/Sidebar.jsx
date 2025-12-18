@@ -1,6 +1,6 @@
-import { Video, Home, Settings, FileText, Users } from 'lucide-react';
+import { Video, Home, Settings, FileText, Users, LogOut } from 'lucide-react';
 
-export function Sidebar({ currentPage, onPageChange }) {
+export function Sidebar({ currentPage, onPageChange, onLogout }) {
   const menuItems = [
     { icon: Home, label: '홈', active: currentPage === 'dashboard', page: 'dashboard' },
     { icon: Video, label: '영상 제작', active: currentPage === 'video', page: 'video' },
@@ -34,6 +34,18 @@ export function Sidebar({ currentPage, onPageChange }) {
           );
         })}
       </nav>
+
+      {onLogout && (
+        <div className="mt-6">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>로그아웃</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

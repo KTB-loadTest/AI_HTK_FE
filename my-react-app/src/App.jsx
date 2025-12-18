@@ -9,7 +9,7 @@ import { VideoPreview } from './components/VideoPreview';
 import { LandingPage } from './components/LandingPage';
 
 export default function App() {
-  const [isAuthenticated] = useState(
+  const [isAuthenticated, setIsAuthenticated] = useState(
     () => sessionStorage.getItem('loggedIn') === 'true'
   );
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -48,10 +48,10 @@ export default function App() {
     setCurrentPage('project-detail');
   };
 
-  const handleBackToDashboard = () => {
+  const handleBackToProjects = () => {
     setSelectedProjectId(null);
     setSelectedVideoId(null);
-    setCurrentPage('dashboard');
+    setCurrentPage('projects');
   };
 
   const handleBackToVideoList = () => {
@@ -59,21 +59,12 @@ export default function App() {
     setCurrentPage('video-list');
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('loggedIn');
+    setIsAuthenticated(false);
+  };
+
   // 로그인 성공 파라미터 감지 (백엔드에서 /?login=success 형태로 리다이렉트한다고 가정)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('login') === 'success') {
-      sessionStorage.setItem('loggedIn', 'true');
-
-      // 쿼리스트링 제거
-      params.delete('login');
-      const newSearch = params.toString();
-      const cleanUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
-      window.history.replaceState({}, '', cleanUrl);
-    }
-  }, []);
-  /*
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const loginSuccess = params.get('login') === 'success';
@@ -81,12 +72,12 @@ export default function App() {
     if (loginSuccess) {
       sessionStorage.setItem('loggedIn', 'true');
       setIsAuthenticated(true);
+
       // 쿼리스트링 제거
       const cleanUrl = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
     }
   }, []);
-  */
 
   if (!isAuthenticated) {
     return <LandingPage />;
@@ -94,7 +85,11 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar currentPage={sidebarPage} onPageChange={setCurrentPage} />
+      <Sidebar
+        currentPage={sidebarPage}
+        onPageChange={setCurrentPage}
+        onLogout={handleLogout}
+      />
 
       <main className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
@@ -110,7 +105,7 @@ export default function App() {
             <VideoListPage
               projectId={selectedProjectId}
               onVideoClick={handleVideoClick}
-              onBack={handleBackToDashboard}
+              onBack={handleBackToProjects}
             />
           )}
 
