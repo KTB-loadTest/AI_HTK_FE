@@ -3,7 +3,6 @@ import axios from 'axios';
 // baseURL 정규화: 프로토콜이 없거나 슬래시가 중복될 때를 대비
 const rawBase = import.meta.env.VITE_API_URL?.trim();
 const baseURL = rawBase.replace(/\/$/, '');
-console.log('Normalized VITE_API_URL:', baseURL);
 
 // 1. 공통 인스턴스 생성
 const client = axios.create({
