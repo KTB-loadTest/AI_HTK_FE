@@ -1,12 +1,37 @@
 import { useState } from 'react';
-import { Video, Loader2, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Video, Loader2, CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
 import YouTube from 'react-youtube';
+import { videoService } from '../api/videoService';
 
 export function VideoPreview({ state, bookData, onReset }) {
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // bookData에서 videos 배열 가져오기
   const videos = bookData?.videos || [];
+
+  // 영상 삭제 핸들러
+  const handleDelete = async () => {
+    const selectedVideo = videos[selectedVideoIndex];
+    if (!selectedVideo) return;
+
+    if (!window.confirm('정말로 이 영상을 삭제하시겠습니까?')) return;
+
+    try {
+      setIsDeleting(true);
+      await videoService.deleteVideo({
+        userId: 3,
+        videoId: selectedVideo.id,
+      });
+      alert('영상이 삭제되었습니다.');
+      onReset();
+    } catch (err) {
+      console.error('영상 삭제 실패:', err);
+      alert('영상 삭제에 실패했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // YouTube player options
   const opts = {
@@ -140,14 +165,14 @@ export function VideoPreview({ state, bookData, onReset }) {
             ))}
           </div>
 
-          <a
-            href={selectedVideo.youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0 text-center"
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="mt-4 w-full bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 disabled:bg-red-300 transition-colors flex-shrink-0 text-center flex items-center justify-center gap-2"
           >
-            YouTube에서 보기
-          </a>
+            <Trash2 className="w-5 h-5" />
+            {isDeleting ? '삭제 중...' : '삭제'}
+          </button>
         </div>
       </div>
     </div>

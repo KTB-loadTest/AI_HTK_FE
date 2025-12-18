@@ -54,8 +54,12 @@ export const videoService = {
 
     /**
      * 특정 영상 삭제
+     * @param {Object} params - { userId: number, videoId: string }
      */
-    deleteVideo: (videoId) => client.delete(`/videos/${videoId}`),
+    deleteVideo: (params) => {
+        const { userId, videoId } = params;
+        return client.delete(`/videos?userId=${userId}&videoId=${videoId}`);
+    },
 
     /**
      * YouTube 영상 통계 조회
