@@ -182,7 +182,7 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
       value: analyticsData?.summary?.views
         ? analyticsData.summary.views.toLocaleString()
         : '-',
-      delta: '+8.4% vs 지난주',
+      delta: '데이터가 충분하지 않습니다.',
       color: 'text-blue-600',
       key: 'views',
     },
@@ -191,7 +191,7 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
       value: analyticsData?.summary?.watchTimeMinutes
         ? analyticsData.summary.watchTimeMinutes.toLocaleString()
         : '-',
-      delta: '+6.1% vs 지난주',
+      delta: '데이터가 충분하지 않습니다.',
       color: 'text-emerald-600',
       key: 'watchTimeMinutes',
     },
@@ -200,14 +200,14 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
       value: analyticsData?.summary?.avgViewDurationSeconds
         ? `${analyticsData.summary.avgViewDurationSeconds}s`
         : '-',
-      delta: '지속률 안정',
+      delta: '데이터가 충분하지 않습니다.',
       color: 'text-amber-600',
       key: 'avgViewDurationSeconds',
     },
     {
       label: 'CTR',
       value: analyticsData?.summary?.ctr ? `${analyticsData.summary.ctr}%` : '-',
-      delta: '상위 10% 구간',
+      delta: '데이터가 충분하지 않습니다.',
       color: 'text-purple-600',
       key: 'ctr',
     },
@@ -246,7 +246,7 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">YouTube Analytics</h2>
-            <span className="text-gray-500 text-sm">목데이터 · 최근 4개 영상 기준</span>
+            <span className="text-gray-500 text-sm">최근 {videos.length}개 영상 기준</span>
           </div>
 
           {analyticsLoading ? (
@@ -342,7 +342,7 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
                 <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">영상별 조회/시청시간</h3>
-                    <span className="text-xs text-gray-500">목데이터</span>
+                    <span className="text-xs text-gray-500">영상 데이터</span>
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={analyticsData.perVideo}>

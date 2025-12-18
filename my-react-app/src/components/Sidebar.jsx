@@ -4,7 +4,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout }) {
   const menuItems = [
     { icon: Home, label: '홈', active: currentPage === 'dashboard', page: 'dashboard' },
     { icon: Video, label: '영상 제작', active: currentPage === 'video', page: 'video' },
-    { icon: FileText, label: '프로젝트', active: currentPage === 'projects', page: 'projects' },
+    { icon: FileText, label: '분석', active: currentPage === 'projects', page: 'projects' },
     { icon: Users, label: '팀', active: currentPage === 'team', page: 'team' },
     { icon: Settings, label: '설정', active: currentPage === 'settings', page: 'settings' },
   ];
