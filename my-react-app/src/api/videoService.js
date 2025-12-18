@@ -20,6 +20,12 @@ export const videoService = {
     getAllBooks: (userId) => client.get(`/books?userId=${userId}`),
 
     /**
+     * 특정 책의 영상 목록 가져오기
+     * @param {number} bookId - 책 ID
+     */
+    getBookVideos: (bookId) => client.get(`/books/${bookId}/youtube-urls`),
+
+    /**
      * 소설 원고 제출 및 영상 생성 요청
      * @param {Object} data - { title: string, content: string }
      */
