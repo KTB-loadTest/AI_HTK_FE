@@ -17,9 +17,18 @@ export function Dashboard({ onNavigate, onProjectClick }) {
     const fetchRecentBooks = async () => {
       try {
         const response = await videoService.getRecentBooks(3);
-        setRecentProjects(response.data);
+        console.log('API 응답:', response.data);
+
+        // 응답이 배열인지 확인하고 설정
+        if (Array.isArray(response.data)) {
+          setRecentProjects(response.data);
+        } else {
+          console.warn('응답이 배열이 아닙니다:', response.data);
+          setRecentProjects([]);
+        }
       } catch (error) {
         console.error('최근 책 목록 조회 실패:', error);
+        setRecentProjects([]);
       } finally {
         setLoading(false);
       }
