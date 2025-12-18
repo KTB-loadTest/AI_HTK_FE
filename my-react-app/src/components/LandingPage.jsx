@@ -21,7 +21,7 @@ export function LandingPage() {
 
   const handleLoginClick = () => {
     // 백엔드가 /login에서 Google OAuth 리다이렉트를 처리하도록 위임
-    window.location.href = `${import.meta.env.VITE_API_URL}/login`;
+    window.location.href = `/api/login`;
   };
 
   const features = [
