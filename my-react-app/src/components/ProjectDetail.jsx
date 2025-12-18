@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Eye, ThumbsUp, Share2, MessageCircle, Clock, Calendar, BarChart3, X, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Eye, ThumbsUp, Share2, MessageCircle, Clock, Calendar, BarChart3, X, Copy, Check, Download } from 'lucide-react';
 import YouTube from 'react-youtube';
 import { videoService } from '../api/videoService';
 
@@ -78,9 +78,30 @@ export function ProjectDetail({ videoId, onBack }) {
     }
   };
 
-  // 다운로드 (YouTube 페이지로 이동)
-  const handleDownload = () => {
-    window.open(getYoutubeUrl(), '_blank');
+  // 영상 다운로드
+  const handleDownload = async () => {
+    // 백엔드에서 downloadUrl이 제공되면 사용
+    const downloadUrl = videoData?.downloadUrl || videoData?.videoUrl;
+
+    if (downloadUrl) {
+      try {
+        const response = await fetch(downloadUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${videoData?.title || videoId}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('다운로드 실패:', err);
+        alert('다운로드에 실패했습니다.');
+      }
+    } else {
+      alert('다운로드 가능한 영상 URL이 없습니다.');
+    }
   };
 
   if (loading) {
@@ -205,9 +226,10 @@ export function ProjectDetail({ videoId, onBack }) {
           <div className="flex gap-3">
             <button
               onClick={handleDownload}
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
-              YouTube에서 보기
+              <Download className="w-5 h-5" />
+              다운로드
             </button>
             <button
               onClick={() => setShowShareModal(true)}
@@ -243,13 +265,13 @@ export function ProjectDetail({ videoId, onBack }) {
       </div>
 
       {/* 일별 조회수 그래프 */}
-      {dailyViews.length > 0 && (
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <BarChart3 className="w-5 h-5 text-gray-700" />
-            <h2 className="text-gray-900">일별 조회수</h2>
-          </div>
+      <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart3 className="w-5 h-5 text-gray-700" />
+          <h2 className="text-gray-900">일별 조회수</h2>
+        </div>
 
+        {dailyViews.length > 0 ? (
           <div className="flex items-end gap-4 h-64">
             {dailyViews.map((day, index) => (
               <div key={index} className="flex-1 flex flex-col items-center gap-2">
@@ -264,8 +286,12 @@ export function ProjectDetail({ videoId, onBack }) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center justify-center h-64 text-gray-400">
+            <p>일별 조회수 데이터가 없습니다.</p>
+          </div>
+        )}
+      </div>
 
       {/* 공유 모달 */}
       {showShareModal && (
