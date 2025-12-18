@@ -14,6 +14,12 @@ export const videoService = {
     getRecentBooks: (userId) => client.get(`/books/recent?userId=${userId}`),
 
     /**
+     * 모든 책 목록 가져오기
+     * @param {number} userId - 사용자 ID
+     */
+    getAllBooks: (userId) => client.get(`/books?userId=${userId}`),
+
+    /**
      * 소설 원고 제출 및 영상 생성 요청
      * @param {Object} data - { title: string, content: string }
      */
