@@ -18,48 +18,86 @@ import {
 import { videoService } from '../api/videoService';
 
 export function VideoListPage({ projectId, onVideoClick, onBack }) {
-  // YouTube Analytics 목업 데이터
-  const mockAnalytics = {
-    summary: {
-      views: 48230,
-      watchTimeMinutes: 152430,
-      avgViewDurationSeconds: 198,
-      impressions: 621000,
-      ctr: 5.2,
-      likes: 3120,
-      comments: 428,
-      subscribersGained: 420,
-      subscribersLost: 38,
-    },
-    timeline: [
-      { time: '07:00', views: 2100, watchTimeMinutes: 6120, avgViewDurationSeconds: 175, impressions: 41000, ctr: 4.8 },
-      { time: '07:30', views: 2680, watchTimeMinutes: 7420, avgViewDurationSeconds: 182, impressions: 45200, ctr: 5.0 },
-      { time: '08:00', views: 3210, watchTimeMinutes: 8150, avgViewDurationSeconds: 195, impressions: 49800, ctr: 5.4 },
-      { time: '08:30', views: 2980, watchTimeMinutes: 7820, avgViewDurationSeconds: 201, impressions: 51200, ctr: 5.6 },
-      { time: '09:00', views: 3560, watchTimeMinutes: 9240, avgViewDurationSeconds: 208, impressions: 55600, ctr: 5.5 },
-      { time: '09:30', views: 3380, watchTimeMinutes: 8810, avgViewDurationSeconds: 202, impressions: 54400, ctr: 5.3 },
-      { time: '10:00', views: 3720, watchTimeMinutes: 9480, avgViewDurationSeconds: 199, impressions: 57200, ctr: 5.1 },
-      { time: '10:30', views: 4010, watchTimeMinutes: 10120, avgViewDurationSeconds: 206, impressions: 59000, ctr: 5.4 },
-      { time: '11:00', views: 3890, watchTimeMinutes: 9920, avgViewDurationSeconds: 204, impressions: 58400, ctr: 5.2 },
-    ],
-    trafficSources: [
-      { source: '검색', search: 3200, suggested: 0, browse: 0, external: 0 },
-      { source: '추천 영상', search: 0, suggested: 2800, browse: 0, external: 0 },
-      { source: '홈/탐색', search: 0, suggested: 0, browse: 2400, external: 0 },
-      { source: '외부', search: 0, suggested: 0, browse: 0, external: 1700 },
-    ],
-  };
-  const mockPerVideoStats = [
-    { views: 12890, watchTimeMinutes: 3250, avgViewDurationSeconds: 152, ctr: 5.1 },
-    { views: 11230, watchTimeMinutes: 3020, avgViewDurationSeconds: 162, ctr: 5.6 },
-    { views: 14210, watchTimeMinutes: 2880, avgViewDurationSeconds: 122, ctr: 6.3 },
-    { views: 8920, watchTimeMinutes: 2410, avgViewDurationSeconds: 162, ctr: 4.7 },
-  ];
-
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const toDateStr = (date) => date.toISOString().split('T')[0];
+
+  const buildAnalytics = (videos, analyticsResponse) => {
+    const rows = analyticsResponse?.rows || [];
+    const trafficSources = analyticsResponse?.trafficSources || [];
+    const timeline =
+      Array.isArray(analyticsResponse?.timeline) && analyticsResponse.timeline.length > 0
+        ? analyticsResponse.timeline
+        : [];
+
+    // perVideo: 우선 API rows 사용, 없으면 영상 목록 기반 기본 값
+    const perVideo = rows.length
+      ? rows.map((row, index) => ({
+          videoId: row.videoId || videos[index]?.videoId || `video-${index + 1}`,
+          views: row.views ?? 0,
+          watchTimeMinutes: row.estimatedMinutesWatched ?? 0,
+          avgViewDurationSeconds: row.averageViewDurationSeconds ?? 0,
+          ctr: row.ctr ?? null,
+          impressions: row.impressions ?? null,
+        }))
+      : (videos || []).map((video, index) => ({
+          videoId: video.videoId || `video-${index + 1}`,
+          views: video.views ?? 0,
+          watchTimeMinutes: video.watchTimeMinutes ?? 0,
+          avgViewDurationSeconds: video.avgViewDurationSeconds ?? 0,
+          ctr: video.ctr ?? null,
+          impressions: video.impressions ?? null,
+        }));
+
+    const totalViews = perVideo.reduce((sum, v) => sum + (v.views || 0), 0);
+    const totalWatch = perVideo.reduce((sum, v) => sum + (v.watchTimeMinutes || 0), 0);
+    const totalImpressions = perVideo.reduce((sum, v) => sum + (v.impressions || 0), 0);
+    const weightedAvgViewDuration =
+      totalViews > 0
+        ? Math.round(
+            perVideo.reduce(
+              (sum, v) => sum + (v.avgViewDurationSeconds || 0) * (v.views || 0),
+              0
+            ) / totalViews
+          )
+        : 0;
+    const avgCtr =
+      perVideo.length > 0
+        ? (
+            perVideo.reduce((sum, v) => sum + (v.ctr || 0), 0) / perVideo.length
+          ).toFixed(1)
+        : 0;
+
+    const summary = {
+      views: totalViews,
+      watchTimeMinutes: totalWatch,
+      avgViewDurationSeconds: weightedAvgViewDuration,
+      impressions: totalImpressions,
+      ctr: Number(avgCtr),
+    };
+
+    // 타임라인 데이터가 없으면 perVideo를 대체 축으로 사용
+    const timelineData =
+      timeline.length > 0
+        ? timeline
+        : perVideo.map((v, idx) => ({
+            time: v.videoId || `video-${idx + 1}`,
+            views: v.views,
+            watchTimeMinutes: v.watchTimeMinutes,
+            impressions: v.impressions,
+            ctr: v.ctr,
+          }));
+
+    return {
+      summary,
+      timeline: timelineData,
+      trafficSources,
+      perVideo,
+    };
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -74,22 +112,22 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
         setProject(response);
         const videos = response?.videos || [];
 
-        // 실제 영상 목록 + 목업 분석 지표 결합
-        const perVideo = videos.map((video, index) => {
-          const base = mockPerVideoStats[index % mockPerVideoStats.length];
-          return {
-            videoId: video.videoId,
-            views: base.views,
-            watchTimeMinutes: base.watchTimeMinutes,
-            avgViewDurationSeconds: base.avgViewDurationSeconds,
-            ctr: base.ctr,
-          };
-        });
+        // 실제 Analytics 호출
+        let analyticsResponse = null;
+        if (videos.length > 0) {
+          const endDate = new Date();
+          const startDate = new Date();
+          startDate.setDate(endDate.getDate() - 7);
 
-        setAnalyticsData({
-          ...mockAnalytics,
-          perVideo,
-        });
+          analyticsResponse = await videoService.getYoutubeAnalytics({
+            userId: response?.userId || 3,
+            videoIds: videos.map((v) => v.videoId).join(','),
+            startDate: toDateStr(startDate),
+            endDate: toDateStr(endDate),
+          });
+        }
+
+        setAnalyticsData(buildAnalytics(videos, analyticsResponse));
       } catch (error) {
         console.error('책 영상 목록 조회 실패:', error);
         if (!isMounted) return;
