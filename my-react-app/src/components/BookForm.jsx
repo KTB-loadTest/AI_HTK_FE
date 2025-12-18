@@ -16,10 +16,10 @@ export function BookForm({ onSubmit, disabled }) {
           title: title.trim(),
           authorName: author.trim()
         });
-        console.log('영상 생성 요청 성공:', response.data);
+        console.log('영상 생성 요청 성공:', response);
 
         if (onSubmit) {
-          onSubmit({ title, author, response: response.data });
+          onSubmit({ title, author, response });
         }
       } catch (error) {
         console.error('영상 생성 요청 실패:', error);

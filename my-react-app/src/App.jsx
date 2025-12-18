@@ -24,13 +24,15 @@ export default function App() {
       : currentPage;
 
   const handleCreateVideo = (data) => {
-    setBookData(data);
-    setVideoState('processing');
+    // data 구조: { title, author, response: [{id, youtubeUrl, title}, ...] }
+    const bookInfo = {
+      title: data.title,
+      author: data.author,
+      videos: data.response || [] // response가 videos 배열
+    };
 
-    // 영상 제작 시뮬레이션 (3초 후 완료)
-    setTimeout(() => {
-      setVideoState('complete');
-    }, 3000);
+    setBookData(bookInfo);
+    setVideoState('complete'); // 백엔드에서 이미 생성 완료된 상태로 옴
   };
 
   const handleReset = () => {
