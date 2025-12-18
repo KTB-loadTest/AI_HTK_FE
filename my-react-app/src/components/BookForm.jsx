@@ -1,21 +1,37 @@
 import { useState } from 'react';
 import { Book, User, Sparkles } from 'lucide-react';
+import { videoService } from '../api/videoService.js';
 
 export function BookForm({ onSubmit, disabled }) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (title.trim() && author.trim()) {
-      onSubmit({ title, author });
+      try {
+        console.log('영상 생성 요청 중...');
+        const response = await videoService.createVideo({
+          userId: 3,
+          title: title.trim(),
+          authorName: author.trim()
+        });
+        console.log('영상 생성 요청 성공:', response.data);
+
+        if (onSubmit) {
+          onSubmit({ title, author, response: response.data });
+        }
+      } catch (error) {
+        console.error('영상 생성 요청 실패:', error);
+        alert('영상 생성 요청에 실패했습니다.');
+      }
     }
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <h3 className="mb-6 text-gray-900">책 정보 입력</h3>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="title" className="block mb-2 text-gray-700">

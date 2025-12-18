@@ -2,6 +2,12 @@ import client from './client';
 
 export const videoService = {
     /**
+     * 영상 생성 요청
+     * @param {Object} data - { userId: number, title: string, authorName: string }
+     */
+    createVideo: (data) => client.post('/videos', data),
+
+    /**
      * 소설 원고 제출 및 영상 생성 요청
      * @param {Object} data - { title: string, content: string }
      */
