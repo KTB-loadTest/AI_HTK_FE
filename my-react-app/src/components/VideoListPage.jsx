@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
   Line,
   ComposedChart,
 } from 'recharts';
@@ -27,6 +26,8 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
   const toDateStr = (date) => date.toISOString().split('T')[0];
 
   const buildAnalytics = (videos, analyticsResponse) => {
+    const safeVideos = Array.isArray(videos) ? videos : [];
+    const baseVideoIds = safeVideos.map((video, index) => video?.videoId || `video-${index + 1}`);
     const rows = analyticsResponse?.rows || [];
     const trafficSourcesFromApi = analyticsResponse?.trafficSources || [];
     const timelineFromApi =
@@ -34,27 +35,46 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
         ? analyticsResponse.timeline
         : [];
 
-    const hasApiData =
-      rows.length > 0 || (trafficSourcesFromApi?.length ?? 0) > 0 || timelineFromApi.length > 0;
+    // API rows를 videoId 기준으로 정규화
+    const normalizedRows = rows.map((row, index) => {
+      const fallbackId = baseVideoIds[index] || `video-${index + 1}`;
+      const videoId = row.videoId || fallbackId;
+      return {
+        videoId,
+        views: row.views ?? 0,
+        watchTimeMinutes: row.estimatedMinutesWatched ?? 0,
+        avgViewDurationSeconds: row.averageViewDurationSeconds ?? 0,
+        ctr: row.ctr ?? null,
+        impressions: row.impressions ?? null,
+      };
+    });
+    const rowsById = new Map(normalizedRows.map((r) => [r.videoId, r]));
 
-    // perVideo: 우선 API rows 사용, 없으면 영상 목록 기반 기본 값
-    const perVideo = rows.length
-      ? rows.map((row, index) => ({
-          videoId: row.videoId || videos[index]?.videoId || `video-${index + 1}`,
-          views: row.views ?? 0,
-          watchTimeMinutes: row.estimatedMinutesWatched ?? 0,
-          avgViewDurationSeconds: row.averageViewDurationSeconds ?? 0,
-          ctr: row.ctr ?? null,
-          impressions: row.impressions ?? null,
-        }))
-      : (videos || []).map((video, index) => ({
-          videoId: video.videoId || `video-${index + 1}`,
-          views: hasApiData ? video.views ?? 0 : randomInt(5000, 20000),
-          watchTimeMinutes: hasApiData ? video.watchTimeMinutes ?? 0 : randomInt(1200, 6000),
-          avgViewDurationSeconds: hasApiData ? video.avgViewDurationSeconds ?? 0 : randomInt(90, 240),
-          ctr: hasApiData ? video.ctr ?? null : Number((Math.random() * 4 + 3).toFixed(1)),
-          impressions: hasApiData ? video.impressions ?? null : randomInt(30000, 120000),
-        }));
+    // 영상 개수만큼 무조건 데이터 생성 (API 없으면 목데이터)
+    const perVideo = baseVideoIds.map((videoId, index) => {
+      const apiRow = rowsById.get(videoId);
+      if (apiRow) return apiRow;
+
+      const mockValue = {
+        views: randomInt(1200, 8000),
+        watchTimeMinutes: randomInt(300, 1800),
+        avgViewDurationSeconds: randomInt(60, 240),
+        ctr: Number((Math.random() * 4 + 3).toFixed(1)),
+        impressions: randomInt(10000, 60000),
+      };
+
+      return {
+        videoId,
+        ...mockValue,
+      };
+    });
+
+    // 영상 목록에 없는 API row도 추가로 노출
+    normalizedRows.forEach((row) => {
+      if (!baseVideoIds.includes(row.videoId)) {
+        perVideo.push(row);
+      }
+    });
 
     const totalViews = perVideo.reduce((sum, v) => sum + (v.views || 0), 0);
     const totalWatch = perVideo.reduce((sum, v) => sum + (v.watchTimeMinutes || 0), 0);
@@ -87,12 +107,18 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
     const timelineData =
       timelineFromApi.length > 0
         ? timelineFromApi
-        : Array.from({ length: Math.max(6, Math.min(12, perVideo.length || 6)) }).map((_, idx) => ({
-            time: `M${idx + 1}`,
+        : (perVideo.length > 0 ? perVideo : Array.from({ length: 6 }).map((_, idx) => ({
+            videoId: `video-${idx + 1}`,
             views: randomInt(1500, 5500),
             watchTimeMinutes: randomInt(3000, 12000),
             impressions: randomInt(20000, 80000),
             ctr: Number((Math.random() * 4 + 3).toFixed(1)),
+          }))).map((row, idx) => ({
+            time: row.videoId || baseVideoIds[idx] || `video-${idx + 1}`,
+            views: row.views ?? randomInt(1500, 5500),
+            watchTimeMinutes: row.watchTimeMinutes ?? randomInt(3000, 12000),
+            impressions: row.impressions ?? randomInt(20000, 80000),
+            ctr: row.ctr ?? Number((Math.random() * 4 + 3).toFixed(1)),
           }));
 
     const trafficSources =
@@ -309,10 +335,10 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
                 <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">조회수 & 시청시간 추이</h3>
-                    <span className="text-xs text-gray-500">30분 단위</span>
+                    <span className="text-xs text-gray-500">영상 ID / 시간 구간</span>
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={analyticsData.timeline}>
+                    <ComposedChart data={analyticsData.timeline}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="time" stroke="#6b7280" />
                       <YAxis yAxisId="left" stroke="#6b7280" />
@@ -322,9 +348,15 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
                         labelStyle={{ color: '#111827' }}
                       />
                       <Legend />
-                      <Line yAxisId="left" type="monotone" dataKey="views" stroke="#0ea5e9" name="조회수" />
-                      <Line yAxisId="right" type="monotone" dataKey="watchTimeMinutes" stroke="#22c55e" name="시청시간(분)" />
-                    </LineChart>
+                      <Bar yAxisId="left" dataKey="views" fill="#0ea5e9" name="조회수" radius={[4, 4, 0, 0]} />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="watchTimeMinutes"
+                        stroke="#22c55e"
+                        name="시청시간(분)"
+                      />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
 
