@@ -26,6 +26,15 @@ export const videoService = {
     getBookVideos: (bookId) => client.get(`/books/${bookId}/youtube-urls`),
 
     /**
+     * YouTube Analytics 데이터 가져오기
+     * @param {Object} params - { userId, videoIds, startDate, endDate }
+     */
+    getYoutubeAnalytics: (params) => {
+        const { userId, videoIds, startDate, endDate } = params;
+        return client.get(`/youtube/analytics?userId=${userId}&videoIds=${videoIds}&startDate=${startDate}&endDate=${endDate}`);
+    },
+
+    /**
      * 소설 원고 제출 및 영상 생성 요청
      * @param {Object} data - { title: string, content: string }
      */

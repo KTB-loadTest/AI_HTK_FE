@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Play } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { videoService } from '../api/videoService';
 
 export function VideoListPage({ projectId, onVideoClick, onBack }) {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
     const fetchBookVideos = async () => {
@@ -13,6 +16,11 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
         console.log('책 영상 목록 응답:', response);
 
         setProject(response);
+
+        // 영상 목록을 받아온 후 Analytics 데이터 가져오기
+        if (response && response.videos && response.videos.length > 0) {
+          fetchAnalytics(response.videos);
+        }
       } catch (error) {
         console.error('책 영상 목록 조회 실패:', error);
         setProject(null);
@@ -25,6 +33,28 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
       fetchBookVideos();
     }
   }, [projectId]);
+
+  const fetchAnalytics = async (videos) => {
+    try {
+      setAnalyticsLoading(true);
+      const videoIds = videos.map(v => v.videoId).join(',');
+
+      const response = await videoService.getYoutubeAnalytics({
+        userId: 3,
+        videoIds: videoIds,
+        startDate: '2025-12-11',
+        endDate: '2025-12-18'
+      });
+
+      console.log('Analytics 응답:', response);
+      setAnalyticsData(response);
+    } catch (error) {
+      console.error('Analytics 조회 실패:', error);
+      setAnalyticsData(null);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -77,6 +107,70 @@ export function VideoListPage({ projectId, onVideoClick, onBack }) {
         <h2 className="text-gray-900 mb-2">제작된 영상 ({videos.length}개)</h2>
         <p className="text-gray-500">영상을 선택하여 상세 통계를 확인하세요</p>
       </div>
+
+      {/* YouTube Analytics 대시보드 */}
+      {videos.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-gray-900 mb-4">YouTube Analytics</h2>
+
+          {analyticsLoading ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <p className="text-gray-500">통계 데이터를 불러오는 중...</p>
+            </div>
+          ) : analyticsData && analyticsData.rows ? (
+            <div className="space-y-6">
+              {/* 조회수 차트 */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-gray-900 mb-4">조회수 (Views)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData.rows}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="videoId" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="views" fill="#3b82f6" name="조회수" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* 시청시간 차트 */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-gray-900 mb-4">시청시간 (분)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData.rows}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="videoId" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="estimatedMinutesWatched" fill="#10b981" name="시청시간 (분)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* 평균 재생시간 차트 */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-gray-900 mb-4">평균 재생시간 (초)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analyticsData.rows}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="videoId" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="averageViewDurationSeconds" fill="#f59e0b" name="평균 재생시간 (초)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <p className="text-gray-500">통계 데이터를 불러올 수 없습니다.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 영상 그리드 */}
       {videos.length === 0 ? (
