@@ -6,7 +6,7 @@ export function LandingPage() {
   const [activeSection, setActiveSection] = useState(0);
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const loginUrl = import.meta.env.VITE_BACKEND_LOGIN_URL || '/login';
+  const loginUrl = import.meta.env.VITE_API_URL || '/login';
 
   useEffect(() => {
     const handleScroll = () => {
